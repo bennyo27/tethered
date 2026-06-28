@@ -28,13 +28,26 @@ Main scene: `scenes/main/prototype.tscn`
 
 ## Controls
 
-- WASD — move
-- Space — jump (also push off a wall while grabbing)
-- Mouse — look
-- LMB (hold) — grab a ledge/wall to climb
-- E — interact (stub)
+- WASD — move (ground) / pump swing (one hand) / climb-shimmy (two hands)
+- Mouse — look / aim hands
+- LMB (hold) — grab with LEFT hand
+- RMB (hold) — grab with RIGHT hand
+- Space — jump (ground) / LAUNCH off swing (one hand) / mantle up (two hands)
+- E (hold) — sprint (ground)
 - R — restart run
 - Esc — release mouse
+
+### Climbing model (White Knuckle-style)
+
+- **0 hands** — normal walking/falling. Sprint with E.
+- **1 hand** — PENDULUM swing. WASD pumps the swing, Space launches you off
+  with accumulated momentum + an upward boost. This is how you cross gaps and
+  build speed.
+- **2 hands** — CLIMBING. W/S moves up/down along the line between anchors.
+  A/D shimmies sideways. Space mantles up toward the higher anchor.
+- **Stamina** — gripping drains stamina (2 hands faster than 1). Launching
+  costs a burst. Run out while hanging and you're forced to release — you
+  fall with whatever momentum you had. Regenerates on the ground.
 
 ## Core systems
 

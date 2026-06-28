@@ -26,8 +26,13 @@ surface_material_override/0 = SubResource("StandardMaterial3D_1")
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
 
-[node name="GrabRay" type="RayCast3D" parent="Camera3D"]
-target_position = Vector3(0, 0, -2.5)
+[node name="LeftRay" type="RayCast3D" parent="Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 0, 0)
+target_position = Vector3(0, 0, -3.5)
+
+[node name="RightRay" type="RayCast3D" parent="Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 0, 0)
+target_position = Vector3(0, 0, -3.5)
 
 [node name="Anchor" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
