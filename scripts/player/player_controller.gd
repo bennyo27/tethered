@@ -141,26 +141,9 @@ func _try_mantle() -> bool:
 	## When both hands are anchored, check if there's a walkable surface
 	## above+forward that we can pull ourselves onto. Returns true if mantle
 	## started.
-	# Find the average anchor position — that's roughly where the ledge is.
 	var avg_anchor := (left_anchor + right_anchor) * 0.5
 
-	# Raycast from above the anchors, straight down, to find the ledge surface.
-	var probe_start := avg_anchor + Vector3(0, 1.0, 0)
-	# Use a temporary ray approach: check if there's floor above the anchors
-	# by casting down from above.
-	var space_state := get_world_3d().direct_space_state
-	var query := PhysicsRayQueryParameters3D.create(
-		probe_start, avg_anchor - Vector3(0, 0.5, 0), 0xFFFFFFFF, [self]
-	)
-	var result := space_state.intersect_ray(query)
-	if result.is_empty():
-		return false  # no surface detected above the anchors
-
-	var ledge_top: Vector3 = result.position
-
-	# Determine the forward direction (away from wall, toward where player
-	# should end up). Use the direction from player to anchors, then push
-	# forward perpendicular to it (horizontal).
+	# Forward direction (away from wall, toward the platform top).
 	var to_anchors := (avg_anchor - global_position).normalized()
 	var forward := Vector3(to_anchors.x, 0, to_anchors.z).normalized()
 	if forward.length_squared() < 0.01:
@@ -168,13 +151,32 @@ func _try_mantle() -> bool:
 		forward.y = 0
 		forward = forward.normalized()
 
-	# End position: on top of the ledge, pushed forward.
-	var end_y := ledge_top.y + 0.1  # stand on the surface
-	var end_pos := Vector3(
-		avg_anchor.x + forward.x * mantle_forward_dist,
-		end_y,
-		avg_anchor.z + forward.z * mantle_forward_dist
+	# Raycast from above+slightly-forward of anchors, straight down, to find
+	# the ledge surface. Probing past the wall face so we hit the platform top.
+	var probe_start := avg_anchor + Vector3(0, 1.5, 0) + forward * 0.3
+	var probe_end := avg_anchor + Vector3(0, -0.5, 0) + forward * 0.3
+	var space_state := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(
+		probe_start, probe_end, 0xFFFFFFFF, [self]
 	)
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return false
+
+	var ledge_top: Vector3 = result.position
+
+	# End position: stand on the ledge surface hit point, nudged slightly
+	# forward from the edge. Use the ledge point, NOT the anchor position —
+	# anchors are on the wall face and overshoot thin platforms.
+	var end_pos := Vector3(
+		ledge_top.x + forward.x * 0.4,
+		ledge_top.y + 0.1,
+		ledge_top.z + forward.z * 0.4
+	)
+
+	# Safety: don't mantle downward.
+	if end_pos.y < global_position.y:
+		return false
 
 	# Start the mantle.
 	mantle_state = MantleState.MANTLING
