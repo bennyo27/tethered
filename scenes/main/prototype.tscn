@@ -1,0 +1,45 @@
+[gd_scene load_steps=8 format=3 uid="uid://btethproto01"]
+
+[ext_resource type="PackedScene" uid="uid://btethplayer01" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="Script" path="res://scripts/world/labyrinth_generator.gd" id="2_laby"]
+[ext_resource type="PackedScene" uid="uid://bteththreat01" path="res://scenes/world/threat_riser.tscn" id="3_threat"]
+[ext_resource type="Script" path="res://scripts/player/tether.gd" id="4_tether"]
+[ext_resource type="PackedScene" uid="uid://btethhud01" path="res://scenes/main/hud.tscn" id="5_hud"]
+[ext_resource type="Script" path="res://scripts/enemy/hunter.gd" id="6_hunter"]
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_1"]
+sky_top_color = Color(0.03, 0.02, 0.05, 1)
+sky_horizon_color = Color(0.08, 0.06, 0.1, 1)
+ground_bottom_color = Color(0.01, 0, 0.02, 1)
+ground_horizon_color = Color(0.05, 0.03, 0.07, 1)
+
+[node name="Prototype" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 50, 0)
+light_energy = 0.6
+shadow_enabled = true
+
+[node name="Labyrinth" type="Node3D" parent="."]
+script = ExtResource("2_laby")
+
+[node name="Player1" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2, 0)
+
+[node name="Player2" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 0)
+
+[node name="Tether" type="Node3D" parent="."]
+script = ExtResource("4_tether")
+player_a_path = NodePath("../Player1")
+player_b_path = NodePath("../Player2")
+max_length = 8.0
+
+[node name="ThreatRiser" parent="." instance=ExtResource("3_threat")]
+
+[node name="Hunter" type="Node3D" parent="."]
+script = ExtResource("6_hunter")
+
+[node name="HUD" parent="." instance=ExtResource("5_hud")]

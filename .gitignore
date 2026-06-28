@@ -1,0 +1,24 @@
+# Godot 4
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+
+# Mono / C#
+.mono/
+data_*/
+mono_crash.*.json
+
+# Builds
+builds/
+exports/
+*.exe
+*.pck
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*~
