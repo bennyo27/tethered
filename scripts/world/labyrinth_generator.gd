@@ -36,8 +36,20 @@ func _make_materials() -> void:
 func generate() -> void:
 	for c in get_children():
 		c.queue_free()
+	_spawn_base()
 	for i in chunk_count:
 		_spawn_chunk(i)
+
+
+func _spawn_base() -> void:
+	# Solid floor at y=0 so players don't fall into the void before climbing.
+	var half := chunk_size * 0.5
+	_add_box(Vector3(0, -0.5, 0), Vector3(chunk_size, 1.0, chunk_size), _mat_floor, "Base")
+	# Low walls around the base perimeter as a backstop (so you don't walk off).
+	_add_box(Vector3(0, 1.0, -half), Vector3(chunk_size, 2.0, wall_thickness), _mat_wall, "BaseWall")
+	_add_box(Vector3(0, 1.0, half), Vector3(chunk_size, 2.0, wall_thickness), _mat_wall, "BaseWall")
+	_add_box(Vector3(-half, 1.0, 0), Vector3(wall_thickness, 2.0, chunk_size), _mat_wall, "BaseWall")
+	_add_box(Vector3(half, 1.0, 0), Vector3(wall_thickness, 2.0, chunk_size), _mat_wall, "BaseWall")
 
 
 func _spawn_chunk(index: int) -> void:
