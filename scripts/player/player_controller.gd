@@ -38,14 +38,19 @@ extends CharacterBody3D
 @export var gravity: float = 18.0
 
 ## Climbing / swing tuning.
-@export var swing_gravity: float = 14.0
-@export var swing_pump_force: float = 30.0
+@export var swing_gravity: float = 5.0
+@export var swing_pump_force: float = 10.0
 @export var launch_force: float = 1.0  ## multiplier on current velocity at launch
-@export var launch_boost: float = 4.0  ## flat upward boost on launch
+@export var launch_boost: float = 2.5  ## flat upward boost on launch
 @export var climb_speed: float = 4.0
 @export var shimmy_speed: float = 3.0
 @export var mantle_force: float = 9.0
 @export var max_reach: float = 3.0  ## how far a hand can grab
+
+## Mantle tuning.
+@export var mantle_duration: float = 0.4  ## seconds for the mantle animation
+@export var mantle_reach: float = 2.5  ## how far up/forward to detect a ledge
+@export var mantle_forward_dist: float = 1.2  ## how far forward to place player on ledge
 
 ## Stamina.
 @export var max_stamina: float = 100.0
@@ -72,6 +77,13 @@ var right_rope_len: float = 0.0
 ## Swing velocity (tangential, used when 1 hand anchored).
 var swing_vel: Vector3 = Vector3.ZERO
 
+## Mantle state.
+enum MantleState { NONE, MANTLING }
+var mantle_state: MantleState = MantleState.NONE
+var mantle_start_pos: Vector3 = Vector3.ZERO
+var mantle_end_pos: Vector3 = Vector3.ZERO
+var mantle_timer: float = 0.0
+
 @onready var camera: Camera3D = $Camera3D
 @onready var left_ray: RayCast3D = $Camera3D/LeftRay
 @onready var right_ray: RayCast3D = $Camera3D/RightRay
@@ -97,6 +109,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# Mantle animation takes over completely.
+	if mantle_state == MantleState.MANTLING:
+		_process_mantle(delta)
+		velocity += external_force * delta
+		external_force = Vector3.ZERO
+		move_and_slide()
+		return
+
 	_update_hands()
 	_process_stamina(delta)
 
@@ -113,6 +133,76 @@ func _physics_process(delta: float) -> void:
 	velocity += external_force * delta
 	external_force = Vector3.ZERO
 	move_and_slide()
+
+
+# ─── Mantle ──────────────────────────────────────────────────────────────────
+
+func _try_mantle() -> bool:
+	## When both hands are anchored, check if there's a walkable surface
+	## above+forward that we can pull ourselves onto. Returns true if mantle
+	## started.
+	# Find the average anchor position — that's roughly where the ledge is.
+	var avg_anchor := (left_anchor + right_anchor) * 0.5
+
+	# Raycast from above the anchors, straight down, to find the ledge surface.
+	var probe_start := avg_anchor + Vector3(0, 1.0, 0)
+	# Use a temporary ray approach: check if there's floor above the anchors
+	# by casting down from above.
+	var space_state := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(
+		probe_start, avg_anchor - Vector3(0, 0.5, 0), 0xFFFFFFFF, [self]
+	)
+	var result := space_state.intersect_ray(query)
+	if result.is_empty():
+		return false  # no surface detected above the anchors
+
+	var ledge_top: Vector3 = result.position
+
+	# Determine the forward direction (away from wall, toward where player
+	# should end up). Use the direction from player to anchors, then push
+	# forward perpendicular to it (horizontal).
+	var to_anchors := (avg_anchor - global_position).normalized()
+	var forward := Vector3(to_anchors.x, 0, to_anchors.z).normalized()
+	if forward.length_squared() < 0.01:
+		forward = -camera.global_transform.basis.z
+		forward.y = 0
+		forward = forward.normalized()
+
+	# End position: on top of the ledge, pushed forward.
+	var end_y := ledge_top.y + 0.1  # stand on the surface
+	var end_pos := Vector3(
+		avg_anchor.x + forward.x * mantle_forward_dist,
+		end_y,
+		avg_anchor.z + forward.z * mantle_forward_dist
+	)
+
+	# Start the mantle.
+	mantle_state = MantleState.MANTLING
+	mantle_start_pos = global_position
+	mantle_end_pos = end_pos
+	mantle_timer = 0.0
+	_release_hand(true)
+	_release_hand(false)
+	swing_vel = Vector3.ZERO
+	velocity = Vector3.ZERO
+	return true
+
+
+func _process_mantle(delta: float) -> void:
+	mantle_timer += delta
+	var t := clampf(mantle_timer / mantle_duration, 0.0, 1.0)
+	# Ease-in-out curve so the mantle feels physical.
+	var eased := t * t * (3.0 - 2.0 * t)
+
+	# Lerp position with a slight arc (up first, then forward).
+	var arc_y := sin(t * PI) * 0.3  # small hump over the ledge edge
+	var pos := mantle_start_pos.lerp(mantle_end_pos, eased)
+	pos.y += arc_y
+	global_position = pos
+
+	if t >= 1.0:
+		mantle_state = MantleState.NONE
+		velocity = Vector3.ZERO
 
 
 # ─── Hand management ─────────────────────────────────────────────────────────
@@ -275,14 +365,9 @@ func _climb_movement(delta: float) -> void:
 	# A/D = shimmy sideways.
 	velocity += shimmy_dir * input_dir.x * shimmy_speed
 
-	# Space = mantle up (launch toward higher anchor).
+	# Space = mantle onto the platform above (if there is one).
 	if Input.is_action_just_pressed("jump"):
-		var higher := b if b.y >= a.y else a
-		var mantle_dir := (higher - global_position).normalized()
-		velocity = mantle_dir * mantle_force
-		_release_hand(true)
-		_release_hand(false)
-		swing_vel = velocity
+		_try_mantle()
 
 
 # ─── Stamina ─────────────────────────────────────────────────────────────────
@@ -313,6 +398,8 @@ func apply_tether_force(force: Vector3) -> void:
 
 ## Debug info for HUD.
 func get_climb_state() -> String:
+	if mantle_state == MantleState.MANTLING:
+		return "MANTLE"
 	var c := _anchored_count()
 	if c == 0:
 		return "FREE"
