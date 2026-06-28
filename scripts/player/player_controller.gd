@@ -345,6 +345,7 @@ func _swing_movement(delta: float) -> void:
 
 func _climb_movement(delta: float) -> void:
 	## Both hands anchored → climb along the line between anchors + shimmy.
+	## Body is constrained: can't move beyond max_reach from either anchor.
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 
 	# Direction from lower to higher anchor.
@@ -359,15 +360,39 @@ func _climb_movement(delta: float) -> void:
 	# Shimmy direction = perpendicular to up_dir, horizontal.
 	var shimmy_dir := up_dir.cross(Vector3.UP).normalized()
 
-	velocity = Vector3.ZERO
+	# Calculate desired velocity from input.
+	var wish_vel := Vector3.ZERO
 	# W (forward) = climb up, S (back) = climb down.
-	velocity += up_dir * (-input_dir.y) * climb_speed
+	wish_vel += up_dir * (-input_dir.y) * climb_speed
 	# A/D = shimmy sideways.
-	velocity += shimmy_dir * input_dir.x * shimmy_speed
+	wish_vel += shimmy_dir * input_dir.x * shimmy_speed
+
+	# Apply movement.
+	var new_pos := global_position + wish_vel * delta
+
+	# CONSTRAINT: body can't be farther than max_reach from either anchor.
+	# This is the arm-length limit — you can't float away from your grips.
+	new_pos = _constrain_to_anchors(new_pos)
+
+	global_position = new_pos
+	velocity = wish_vel  # for move_and_slide / external forces
 
 	# Space = mantle onto the platform above (if there is one).
 	if Input.is_action_just_pressed("jump"):
 		_try_mantle()
+
+
+func _constrain_to_anchors(pos: Vector3) -> Vector3:
+	## Pull pos back within max_reach of both anchor points.
+	## If both constraints conflict, find the closest valid point.
+	var constrained := pos
+	var anchors: Array[Vector3] = [left_anchor, right_anchor]
+	for anchor in anchors:
+		var offset: Vector3 = constrained - anchor
+		var dist := offset.length()
+		if dist > max_reach:
+			constrained = anchor + offset.normalized() * max_reach
+	return constrained
 
 
 # ─── Stamina ─────────────────────────────────────────────────────────────────
