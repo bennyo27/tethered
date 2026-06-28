@@ -32,7 +32,7 @@ Main scene: `scenes/main/prototype.tscn`
 - Mouse — look / aim hands
 - LMB (hold) — grab with LEFT hand
 - RMB (hold) — grab with RIGHT hand
-- Space — jump (ground) / LAUNCH off swing (one hand) / mantle up (two hands)
+- Space — jump (ground) / launch off swing (one hand) / push off (two hands: jump up+forward toward your grips — manual mantle)
 - E (hold) — sprint (ground)
 - T — toggle tether + player2 (solo test mode)
 - R — restart run
@@ -44,7 +44,7 @@ Main scene: `scenes/main/prototype.tscn`
 - **1 hand** — PENDULUM swing. WASD pumps the swing, Space launches you off
   with accumulated momentum + an upward boost. This is how you cross gaps and
   build speed.
-- **2 hands** — CLIMBING. W/S moves up/down along the line between anchors.
+- **2 hands** — CLIMBING. Body pulled toward grip midpoint. W/S moves up/down.
   A/D shimmies sideways. Space mantles up toward the higher anchor.
 - **Stamina** — gripping drains stamina (2 hands faster than 1). Launching
   costs a burst. Run out while hanging and you're forced to release — you
