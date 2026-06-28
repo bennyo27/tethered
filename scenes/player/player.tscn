@@ -1,6 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://btethplayer01"]
+[gd_scene load_steps=8 format=3 uid="uid://btethplayer01"]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/player/hands_view.gd" id="2_hands"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
 radius = 0.4
@@ -12,6 +13,14 @@ height = 1.8
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1"]
 albedo_color = Color(0.8, 0.4, 0.3, 1)
+
+[sub_resource type="SphereMesh" id="HandMesh_1"]
+radius = 0.08
+height = 0.25
+
+[sub_resource type="StandardMaterial3D" id="HandMat_1"]
+albedo_color = Color(0.75, 0.55, 0.45, 1)
+roughness = 0.8
 
 [node name="Player" type="CharacterBody3D" groups=["players"]]
 script = ExtResource("1_player")
@@ -33,6 +42,19 @@ target_position = Vector3(0, 0, -3.5)
 [node name="RightRay" type="RayCast3D" parent="Camera3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 0, 0)
 target_position = Vector3(0, 0, -3.5)
+
+[node name="HandsView" type="Node3D" parent="Camera3D"]
+script = ExtResource("2_hands")
+
+[node name="LeftHand" type="MeshInstance3D" parent="Camera3D/HandsView"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, -0.25, -0.5)
+mesh = SubResource("HandMesh_1")
+surface_material_override/0 = SubResource("HandMat_1")
+
+[node name="RightHand" type="MeshInstance3D" parent="Camera3D/HandsView"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, -0.25, -0.5)
+mesh = SubResource("HandMesh_1")
+surface_material_override/0 = SubResource("HandMat_1")
 
 [node name="Anchor" type="Marker3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
