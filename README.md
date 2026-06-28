@@ -34,6 +34,7 @@ Main scene: `scenes/main/prototype.tscn`
 - RMB (hold) — grab with RIGHT hand
 - Space — jump (ground) / LAUNCH off swing (one hand) / mantle up (two hands)
 - E (hold) — sprint (ground)
+- T — toggle tether + player2 (solo test mode)
 - R — restart run
 - Esc — release mouse
 
